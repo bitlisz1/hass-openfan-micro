@@ -1,3 +1,5 @@
+from typing import Any, Optional
+
 from homeassistant.components.fan import FanEntity, FanEntityFeature
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import HomeAssistant
@@ -16,8 +18,9 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry, async_add_e
 class OpenFANMicroEntity(FanEntity):
     def __init__(self, host, name=None):
         self._host = host
+        # Last speed when turning off, default to 50%
+        self.last_speed = 50
         self._attr_name = name or "OpenFAN Micro"
-        self._attr_supported_features = FanEntityFeature.SET_SPEED
         self._speed_pct = 0
         self._unique_id = unique_id(host)
         self._attr_device_info = DeviceInfo(
@@ -26,6 +29,11 @@ class OpenFANMicroEntity(FanEntity):
             manufacturer="Karanovic Research",
             model="OpenFAN Micro",
         )
+
+    @property
+    def supported_features(self) -> FanEntityFeature:
+        """Flag supported features."""
+        return FanEntityFeature.SET_SPEED | FanEntityFeature.TURN_OFF | FanEntityFeature.TURN_ON
 
     @property
     def device_info(self) -> DeviceInfo:
@@ -51,3 +59,18 @@ class OpenFANMicroEntity(FanEntity):
     async def async_set_percentage(self, percentage: int) -> None:
         await self.hass.async_add_executor_job(set_fan_speed, self._host, percentage)
         self._speed_pct = percentage
+
+    async def async_turn_on(
+        self,
+        speed: Optional[str] = None,
+        percentage: Optional[int] = None,
+        preset_mode: Optional[str] = None,
+        **kwargs: Any,
+    ) -> None:
+        """Turn on the fan."""
+        await self.hass.async_add_executor_job(set_fan_speed, percentage or self.last_speed)
+
+    async def async_turn_off(self, **kwargs: Any) -> None:
+        """Turn the fan off."""
+        self.last_speed = self.percentage
+        await self.hass.async_add_executor_job(set_fan_speed, 0)
