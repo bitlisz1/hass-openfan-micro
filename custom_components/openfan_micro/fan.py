@@ -4,12 +4,10 @@ from homeassistant.core import HomeAssistant
 from homeassistant.helpers.device_registry import DeviceInfo
 
 from ._api import get_fan_status, set_fan_speed
-from .const import DOMAIN
+from .const import DOMAIN, unique_id
 
 
-async def async_setup_entry(
-    hass: HomeAssistant, entry: ConfigEntry, async_add_entities
-):
+async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry, async_add_entities):
     host = entry.data["host"]
     name = entry.data.get("name")
     async_add_entities([OpenFANMicroEntity(host, name)])
@@ -21,16 +19,13 @@ class OpenFANMicroEntity(FanEntity):
         self._attr_name = name or "OpenFAN Micro"
         self._attr_supported_features = FanEntityFeature.SET_SPEED
         self._speed_pct = 0
-
-        self._unique_id = f"openfan_micro_{host}"
+        self._unique_id = unique_id(host)
 
     @property
     def device_info(self) -> DeviceInfo:
         """Return the device info."""
         return DeviceInfo(
-            identifiers={
-                (DOMAIN, self.unique_id)
-            },
+            identifiers={(DOMAIN, self.unique_id)},
             name=self.name,
             manufacturer="Karanovic Research",
             model="OpenFAN Micro",

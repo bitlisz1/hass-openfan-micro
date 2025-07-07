@@ -2,7 +2,8 @@
     "name": "OpenFAN Micro",
     "content_in_root": false,
     "domains": [
-        "fan"
+        "fan",
+        "sensor"
     ],
     "filename": "custom_components/openfan_micro/manifest.json",
     "zip_release": true
