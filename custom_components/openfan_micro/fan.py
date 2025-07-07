@@ -6,6 +6,7 @@ import requests
 
 from .const import DOMAIN
 
+
 def get_fan_status(host):
     url = f"http://{host}/api/v0/fan/status"
     resp = requests.get(url, timeout=5)
@@ -20,19 +21,23 @@ def get_fan_status(host):
         "speed_rpm": data["rpm"],
     }
 
+
 def set_fan_speed(host, speed_pct):
     url = f"http://{host}/api/v0/fan/0/set"
     params = {"value": int(speed_pct)}
     resp = requests.get(url, params=params, timeout=5)
     resp.raise_for_status()
 
-async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry, async_add_entities):
+
+async def async_setup_entry(
+    hass: HomeAssistant, entry: ConfigEntry, async_add_entities
+):
     host = entry.data["host"]
     name = entry.data.get("name")
     async_add_entities([OpenFANMicroEntity(host, name)])
 
-class OpenFANMicroEntity(FanEntity):
 
+class OpenFANMicroEntity(FanEntity):
     def __init__(self, host, name=None):
         self._host = host
         self._attr_name = name or "OpenFAN Micro"
@@ -56,9 +61,7 @@ class OpenFANMicroEntity(FanEntity):
 
     @property
     def extra_state_attributes(self):
-        return {
-            "speed_rpm": self._rpm
-        }
+        return {"speed_rpm": self._rpm}
 
     async def async_update(self):
         data = await self.hass.async_add_executor_job(get_fan_status, self._host)
