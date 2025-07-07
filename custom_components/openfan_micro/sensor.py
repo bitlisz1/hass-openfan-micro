@@ -20,15 +20,17 @@ class OpenFANMicroRPMSensor(SensorEntity):
         self._rpm = None
         self._unique_id = f"{unique_id(host)}_rpm"
 
-    @property
-    def device_info(self) -> DeviceInfo:
-        """Return the device info."""
-        return DeviceInfo(
+        self._attr_device_info = DeviceInfo(
             identifiers={(DOMAIN, unique_id(self._host))},
-            name=self.name,
+            name=name or "OpenFAN Micro",
             manufacturer="Karanovic Research",
             model="OpenFAN Micro",
         )
+
+    @property
+    def device_info(self) -> DeviceInfo:
+        """Return the device info."""
+        return self._attr_device_info
 
     @property
     def unique_id(self):

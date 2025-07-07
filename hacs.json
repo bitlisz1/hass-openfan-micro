@@ -5,6 +5,5 @@
         "fan",
         "sensor"
     ],
-    "filename": "custom_components/openfan_micro/manifest.json",
-    "zip_release": true
+    "filename": "custom_components/openfan_micro/manifest.json"
 }

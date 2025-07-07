@@ -20,16 +20,17 @@ class OpenFANMicroEntity(FanEntity):
         self._attr_supported_features = FanEntityFeature.SET_SPEED
         self._speed_pct = 0
         self._unique_id = unique_id(host)
+        self._attr_device_info = DeviceInfo(
+            identifiers={(DOMAIN, unique_id(self._host))},
+            name=name or "OpenFAN Micro",
+            manufacturer="Karanovic Research",
+            model="OpenFAN Micro",
+        )
 
     @property
     def device_info(self) -> DeviceInfo:
         """Return the device info."""
-        return DeviceInfo(
-            identifiers={(DOMAIN, self.unique_id)},
-            name=self.name,
-            manufacturer="Karanovic Research",
-            model="OpenFAN Micro",
-        )
+        return self._attr_device_info
 
     @property
     def unique_id(self):
