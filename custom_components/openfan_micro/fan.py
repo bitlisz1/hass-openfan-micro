@@ -1,8 +1,8 @@
+import requests
 from homeassistant.components.fan import FanEntity, FanEntityFeature
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import HomeAssistant
-
-import requests
+from homeassistant.helpers.device_registry import DeviceInfo
 
 from .const import DOMAIN
 
@@ -43,9 +43,20 @@ class OpenFANMicroEntity(FanEntity):
         self._attr_name = name or "OpenFAN Micro"
         self._attr_supported_features = FanEntityFeature.SET_SPEED
         self._speed_pct = 0
-        self._rpm = 0
 
         self._unique_id = f"openfan_micro_{host}"
+
+    @property
+    def device_info(self) -> DeviceInfo:
+        """Return the device info."""
+        return DeviceInfo(
+            identifiers={
+                (DOMAIN, self.unique_id)
+            },
+            name=self.name,
+            manufacturer="Karanovic Research",
+            model="OpenFAN Micro",
+        )
 
     @property
     def unique_id(self):
@@ -59,15 +70,10 @@ class OpenFANMicroEntity(FanEntity):
     def percentage(self):
         return self._speed_pct
 
-    @property
-    def extra_state_attributes(self):
-        return {"speed_rpm": self._rpm}
-
     async def async_update(self):
         data = await self.hass.async_add_executor_job(get_fan_status, self._host)
         self._speed_pct = data["speed_pct"]
-        self._rpm = data["speed_rpm"]
 
-    async def async_set_percentage(self, percentage):
+    async def async_set_percentage(self, percentage: int) -> None:
         await self.hass.async_add_executor_job(set_fan_speed, self._host, percentage)
         self._speed_pct = percentage
