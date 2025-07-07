@@ -1,8 +1,20 @@
 from homeassistant.components.sensor import SensorEntity
 from homeassistant.helpers.device_registry import DeviceInfo
+from homeassistant.components.fan import FanEntity, FanEntityFeature
+from homeassistant.config_entries import ConfigEntry
+from homeassistant.core import HomeAssistant
+from homeassistant.helpers.device_registry import DeviceInfo
+
 
 from ._api import get_fan_status
 from .const import DOMAIN
+
+async def async_setup_entry(
+    hass: HomeAssistant, entry: ConfigEntry, async_add_entities
+):
+    host = entry.data["host"]
+    name = entry.data.get("name")
+    async_add_entities([OpenFANMicroRPMSensor(host, name)])
 
 
 class OpenFANMicroRPMSensor(SensorEntity):
