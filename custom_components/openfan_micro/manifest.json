@@ -1,0 +1,9 @@
+{
+  "domain": "openfan_micro",
+  "name": "OpenFAN Micro",
+  "version": "1.0",
+  "config_flow": true,
+  "documentation": "",
+  "requirements": [],
+  "codeowners": ["@BeryJu"]
+}
