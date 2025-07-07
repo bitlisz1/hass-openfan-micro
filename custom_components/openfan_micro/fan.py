@@ -1,10 +1,26 @@
 from typing import Any, Optional
 
 from homeassistant.components.fan import FanEntity, FanEntityFeature
+from homeassistant.config_entries import ConfigEntry
+from homeassistant.core import HomeAssistant
 from homeassistant.helpers.device_registry import DeviceInfo
+from homeassistant.helpers.entity_platform import AddEntitiesCallback
 
 from ._api import get_fan_status, set_fan_speed
 from .const import DOMAIN, unique_id
+
+
+async def async_setup_entry(
+    hass: HomeAssistant, entry: ConfigEntry, async_add_entities: AddEntitiesCallback
+):
+    host = entry.data["host"]
+    name = entry.data.get("name")
+
+    fan = OpenFANMicroEntity(host, name)
+    hass.data.setdefault(DOMAIN, {})
+    hass.data[DOMAIN]["fan_entity"] = fan
+
+    async_add_entities([fan])
 
 
 class OpenFANMicroEntity(FanEntity):
