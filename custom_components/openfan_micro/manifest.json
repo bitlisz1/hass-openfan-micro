@@ -3,8 +3,9 @@
   "name": "OpenFAN Micro",
   "version": "1.0",
   "config_flow": true,
-  "documentation": "https://github.com/beryju/hass_openfan_micro",
+  "documentation": "https://github.com/beryju/hass-openfan-micro",
   "requirements": [],
   "codeowners": ["@BeryJu"],
-  "integration_type": "device"
+  "integration_type": "device",
+  "icon": "icon.png"
 }
