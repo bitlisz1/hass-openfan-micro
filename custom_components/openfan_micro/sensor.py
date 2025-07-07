@@ -1,8 +1,8 @@
 from homeassistant.components.sensor import SensorEntity
 from homeassistant.helpers.device_registry import DeviceInfo
 
+from ._api import get_fan_status
 from .const import DOMAIN
-from .fan import get_fan_status
 
 
 class OpenFANMicroRPMSensor(SensorEntity):

@@ -1,23 +1,9 @@
+import voluptuous as vol
 from homeassistant import config_entries
 from homeassistant.const import CONF_HOST, CONF_NAME
-import voluptuous as vol
-import requests
-from requests.exceptions import RequestException
 
+from ._api import test_connection
 from .const import DOMAIN
-
-
-def test_connection(host):
-    """Check if the OpenFAN Micro device is reachable and responding."""
-    try:
-        resp = requests.get(f"http://{host}/api/v0/fan/status", timeout=5)
-        resp.raise_for_status()
-        data = resp.json()
-        if data.get("status") != "ok":
-            return False
-        return True
-    except (RequestException, ValueError):
-        return False
 
 
 class OpenFANMicroConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
