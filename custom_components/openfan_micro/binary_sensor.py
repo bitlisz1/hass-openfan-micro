@@ -64,6 +64,10 @@ class OpenFANMicroStallSensor(BinarySensorEntity):
     def name(self):
         return self._name
 
+    @property
+    def unique_id(self):
+        return self._unique_id
+
     async def async_update(self):
         await self._fan_entity.async_update()
         await self._rpm_sensor.async_update()
