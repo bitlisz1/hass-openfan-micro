@@ -39,6 +39,7 @@ class OpenFANMicroStallSensor(BinarySensorEntity):
         self._name = f"{name} Stall Detected"
         self._fan_entity = fan_entity
         self._rpm_sensor = rpm_sensor
+
         self._attr_device_class = BinarySensorDeviceClass.PROBLEM
         self._attr_is_on = False
         self._unique_id = f"{unique_id(fan_entity._host)}_stall"
@@ -48,6 +49,11 @@ class OpenFANMicroStallSensor(BinarySensorEntity):
             manufacturer="Karanovic Research",
             model="OpenFAN Micro",
         )
+
+    @property
+    def device_info(self) -> DeviceInfo:
+        """Return the device info."""
+        return self._attr_device_info
 
     @property
     def is_on(self):
