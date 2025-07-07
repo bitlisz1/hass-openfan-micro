@@ -68,9 +68,9 @@ class OpenFANMicroEntity(FanEntity):
         **kwargs: Any,
     ) -> None:
         """Turn on the fan."""
-        await self.hass.async_add_executor_job(set_fan_speed, percentage or self.last_speed)
+        await self.hass.async_add_executor_job(set_fan_speed, self._host, percentage or self.last_speed)
 
     async def async_turn_off(self, **kwargs: Any) -> None:
         """Turn the fan off."""
         self.last_speed = self.percentage
-        await self.hass.async_add_executor_job(set_fan_speed, 0)
+        await self.hass.async_add_executor_job(set_fan_speed, self._host, 0)
