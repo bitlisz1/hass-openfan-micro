@@ -11,11 +11,9 @@ from .const import DOMAIN
 
 
 async def async_setup_entry(
-    hass: HomeAssistant, entry: ConfigEntry, async_add_entities: AddEntitiesCallback
+    hass: HomeAssistant, entry: ConfigEntry[Device], async_add_entities: AddEntitiesCallback
 ):
-    device: Device = hass.data[DOMAIN][entry.entry_id]
-
-    fan = OpenFANMicroEntity(device)
+    fan = OpenFANMicroEntity(entry.runtime_data)
 
     async_add_entities([fan])
 

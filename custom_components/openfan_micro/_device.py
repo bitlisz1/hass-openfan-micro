@@ -1,9 +1,12 @@
 from typing import Any
+from httpx import AsyncClient
 import requests
 
 
 class Device:
-    def __init__(self, host: str, name: str | None = None):
+
+    def __init__(self, client: AsyncClient, host: str, name: str | None = None):
+        self.client = client
         self._host = host
         self._name = name or "OpenFAN Micro"
 
@@ -27,15 +30,14 @@ class Device:
     def hostname(self) -> str:
         return self._fixed_data.get("hostname")
 
-    def fetch_status(self):
-        resp = requests.get(f"http://{self._host}/api/v0/openfan/status", timeout=5)
+    async def fetch_status(self):
+        resp = await self.client.get(f"http://{self._host}/api/v0/openfan/status")
         resp.raise_for_status()
         data = resp.json()
         self._fixed_data = data.get("data", {})
 
     def get_fan_status(self) -> dict[str, Any]:
-        url = f"http://{self._host}/api/v0/fan/status"
-        resp = requests.get(url, timeout=5)
+        resp = requests.get(f"http://{self._host}/api/v0/fan/status", timeout=5)
         resp.raise_for_status()
         data = resp.json()
 

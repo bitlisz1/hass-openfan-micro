@@ -1,16 +1,21 @@
 from homeassistant.config_entries import ConfigEntry
+from homeassistant.const import CONF_HOST, CONF_NAME
 from homeassistant.core import HomeAssistant
+from homeassistant.helpers.httpx_client import get_async_client
 
 from ._device import Device
-
-from .const import DOMAIN, PLATFORMS
+from .const import PLATFORMS
 
 
 async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry):
-    hass.data.setdefault(DOMAIN, {})
-    device = Device(**entry.data)
+    device = Device(
+        client=get_async_client(hass),
+        host=entry.data.get(CONF_HOST),
+        name=entry.data.get(CONF_NAME),
+    )
     await device.fetch_status()
-    hass.data[DOMAIN][entry.entry_id] = device
+
+    entry.runtime_data = device
 
     await hass.config_entries.async_forward_entry_setups(entry, PLATFORMS)
 
@@ -18,7 +23,4 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry):
 
 
 async def async_unload_entry(hass: HomeAssistant, entry: ConfigEntry):
-    unload_ok = await hass.config_entries.async_unload_platforms(entry, PLATFORMS)
-    if unload_ok:
-        hass.data[DOMAIN].pop(entry.entry_id)
-    return unload_ok
+    return await hass.config_entries.async_unload_platforms(entry, PLATFORMS)
