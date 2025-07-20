@@ -4,11 +4,10 @@ from homeassistant.components.binary_sensor import (
 )
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import HomeAssistant
-from homeassistant.helpers.device_registry import CONNECTION_NETWORK_MAC, DeviceInfo
+from homeassistant.helpers.device_registry import DeviceInfo
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 
 from ._device import Device
-from .const import DOMAIN
 
 
 async def async_setup_entry(
@@ -20,6 +19,7 @@ async def async_setup_entry(
 
 class OpenFANMicroStallSensor(BinarySensorEntity):
     def __init__(self, device: Device):
+        self._ofm_device = device
         self._name = f"{device.hostname} Stall Detected"
 
         self._speed_pct = 0
