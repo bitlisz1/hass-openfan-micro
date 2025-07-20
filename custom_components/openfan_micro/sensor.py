@@ -1,38 +1,39 @@
 from homeassistant.components.sensor import SensorEntity
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import HomeAssistant
-from homeassistant.helpers.device_registry import DeviceInfo
+from homeassistant.helpers.device_registry import DeviceInfo, CONNECTION_NETWORK_MAC
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 
-from ._api import get_fan_status
-from .const import DOMAIN, unique_id
+from _device import Device
+
+from .const import DOMAIN
 
 
 async def async_setup_entry(
     hass: HomeAssistant, entry: ConfigEntry, async_add_entities: AddEntitiesCallback
 ):
-    host = entry.data["host"]
-    name = entry.data.get("name")
+    device: Device = hass.data[DOMAIN][entry.entry_id]
 
-    rpm = OpenFANMicroRPMSensor(host, name)
-    hass.data.setdefault(DOMAIN, {})
-    hass.data[DOMAIN]["rpm_sensor"] = rpm
+    rpm = OpenFANMicroRPMSensor(device)
 
     async_add_entities([rpm])
 
 
 class OpenFANMicroRPMSensor(SensorEntity):
-    def __init__(self, host, name=None):
-        self._host = host
-        self._attr_name = f"{name or 'OpenFAN Micro'} RPM"
+    def __init__(self, device: Device):
+        self._ofm_device = device
+
+        self._attr_name = f"{device.name} RPM"
         self._rpm = None
-        self._unique_id = f"{unique_id(host)}_rpm"
+        self._unique_id = f"{device.unique_id}_rpm"
 
         self._attr_device_info = DeviceInfo(
-            identifiers={(DOMAIN, unique_id(self._host))},
-            name=name or "OpenFAN Micro",
+            identifiers={(DOMAIN, device.unique_id)},
+            connections={(CONNECTION_NETWORK_MAC, device.mac)},
+            name=device.name,
             manufacturer="Karanovic Research",
             model="OpenFAN Micro",
+            sw_version=device.version,
         )
 
     @property
@@ -53,5 +54,5 @@ class OpenFANMicroRPMSensor(SensorEntity):
         return "RPM"
 
     async def async_update(self):
-        data = await self.hass.async_add_executor_job(get_fan_status, self._host)
+        data = await self.hass.async_add_executor_job(self._ofm_device.get_fan_status)
         self._rpm = data["speed_rpm"]

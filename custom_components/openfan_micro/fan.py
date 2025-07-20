@@ -1,41 +1,42 @@
 from typing import Any, Optional
 
+from homeassistant.helpers.device_registry import CONNECTION_NETWORK_MAC
 from homeassistant.components.fan import FanEntity, FanEntityFeature
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers.device_registry import DeviceInfo
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 
-from ._api import get_fan_status, set_fan_speed
-from .const import DOMAIN, unique_id
+from ._device import Device
+
+from .const import DOMAIN
 
 
 async def async_setup_entry(
     hass: HomeAssistant, entry: ConfigEntry, async_add_entities: AddEntitiesCallback
 ):
-    host = entry.data["host"]
-    name = entry.data.get("name")
+    device: Device = hass.data[DOMAIN][entry.entry_id]
 
-    fan = OpenFANMicroEntity(host, name)
-    hass.data.setdefault(DOMAIN, {})
-    hass.data[DOMAIN]["fan_entity"] = fan
+    fan = OpenFANMicroEntity(device)
 
     async_add_entities([fan])
 
 
 class OpenFANMicroEntity(FanEntity):
-    def __init__(self, host, name=None):
-        self._host = host
+    def __init__(self, device: Device):
+        self._ofm_device = device
         # Last speed when turning off, default to 50%
         self.last_speed = 50
-        self._attr_name = name or "OpenFAN Micro"
+        self._attr_name = device.name
         self._speed_pct = 0
-        self._unique_id = unique_id(host)
+        self._unique_id = device.unique_id
         self._attr_device_info = DeviceInfo(
-            identifiers={(DOMAIN, unique_id(self._host))},
-            name=name or "OpenFAN Micro",
+            identifiers={(DOMAIN, self._unique_id)},
+            connections={(CONNECTION_NETWORK_MAC, device.mac)},
+            name=device.name,
             manufacturer="Karanovic Research",
             model="OpenFAN Micro",
+            sw_version=device.version,
         )
 
     @property
@@ -61,11 +62,11 @@ class OpenFANMicroEntity(FanEntity):
         return self._speed_pct
 
     async def async_update(self):
-        data = await self.hass.async_add_executor_job(get_fan_status, self._host)
+        data = await self.hass.async_add_executor_job(self._ofm_device.get_fan_status)
         self._speed_pct = data["speed_pct"]
 
     async def async_set_percentage(self, percentage: int) -> None:
-        await self.hass.async_add_executor_job(set_fan_speed, self._host, percentage)
+        await self.hass.async_add_executor_job(self._ofm_device.set_fan_speed, percentage)
         self._speed_pct = percentage
 
     async def async_turn_on(
@@ -77,10 +78,10 @@ class OpenFANMicroEntity(FanEntity):
     ) -> None:
         """Turn on the fan."""
         await self.hass.async_add_executor_job(
-            set_fan_speed, self._host, percentage or self.last_speed
+            self._ofm_device.set_fan_speed, percentage or self.last_speed
         )
 
     async def async_turn_off(self, **kwargs: Any) -> None:
         """Turn the fan off."""
         self.last_speed = self.percentage
-        await self.hass.async_add_executor_job(set_fan_speed, self._host, 0)
+        await self.hass.async_add_executor_job(self._ofm_device.set_fan_speed, 0)

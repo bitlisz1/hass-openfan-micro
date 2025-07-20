@@ -1,5 +1,4 @@
-from typing import TYPE_CHECKING
-
+from homeassistant.helpers.device_registry import CONNECTION_NETWORK_MAC
 from homeassistant.components.binary_sensor import (
     BinarySensorDeviceClass,
     BinarySensorEntity,
@@ -9,45 +8,37 @@ from homeassistant.core import HomeAssistant
 from homeassistant.helpers.device_registry import DeviceInfo
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 
-from .const import DOMAIN, unique_id
+from ._device import Device
 
-if TYPE_CHECKING:
-    from .fan import OpenFANMicroEntity
-    from .sensor import OpenFANMicroRPMSensor
+from .const import DOMAIN
 
 
 async def async_setup_entry(
     hass: HomeAssistant, entry: ConfigEntry, async_add_entities: AddEntitiesCallback
 ):
-    # Import your fan class
-    fan_entity = hass.data["openfan_micro"]["fan_entity"]
-    rpm_sensor = hass.data["openfan_micro"]["rpm_sensor"]
+    device: Device = hass.data[DOMAIN][entry.entry_id]
 
-    stall_sensor = OpenFANMicroStallSensor(
-        name=fan_entity.name,
-        fan_entity=fan_entity,
-        rpm_sensor=rpm_sensor,
-    )
+    stall_sensor = OpenFANMicroStallSensor(device)
     async_add_entities([stall_sensor])
 
 
 class OpenFANMicroStallSensor(BinarySensorEntity):
+    def __init__(self, device: Device):
+        self._name = f"{device.name} Stall Detected"
 
-    def __init__(
-        self, name: str, fan_entity: "OpenFANMicroEntity", rpm_sensor: "OpenFANMicroRPMSensor"
-    ):
-        self._name = f"{name} Stall Detected"
-        self._fan_entity = fan_entity
-        self._rpm_sensor = rpm_sensor
+        self._speed_pct = 0
+        self._speed_rpm = 0
 
         self._attr_device_class = BinarySensorDeviceClass.PROBLEM
         self._attr_is_on = False
-        self._unique_id = f"{unique_id(fan_entity._host)}_stall"
+        self._unique_id = f"{device.unique_id}_stall"
         self._attr_device_info = DeviceInfo(
-            identifiers={(DOMAIN, unique_id(fan_entity._host))},
-            name=name or "OpenFAN Micro",
+            identifiers={(DOMAIN, device.unique_id)},
+            connections={(CONNECTION_NETWORK_MAC, device.mac)},
+            name=device.name,
             manufacturer="Karanovic Research",
             model="OpenFAN Micro",
+            sw_version=device.version,
         )
 
     @property
@@ -57,8 +48,7 @@ class OpenFANMicroStallSensor(BinarySensorEntity):
 
     @property
     def is_on(self):
-        # True if PWM > 0 but RPM == 0
-        return self._fan_entity.percentage > 0 and self._rpm_sensor.state == 0
+        return self._speed_pct > 0 and self._speed_rpm == 0
 
     @property
     def name(self):
@@ -69,6 +59,8 @@ class OpenFANMicroStallSensor(BinarySensorEntity):
         return self._unique_id
 
     async def async_update(self):
-        await self._fan_entity.async_update()
-        await self._rpm_sensor.async_update()
+        # True if PWM > 0 but RPM == 0
+        data = await self.hass.async_add_executor_job(self._ofm_device.get_fan_status)
+        self._speed_pct = data["speed_pct"]
+        self._speed_rpm = data["speed_rpm"]
         self.async_write_ha_state()
