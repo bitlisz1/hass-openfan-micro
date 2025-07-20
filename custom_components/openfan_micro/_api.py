@@ -10,9 +10,10 @@ def get_fan_status(host):
     if data.get("status") != "ok":
         raise RuntimeError("Fan returned error status.")
 
+    fan_data = data.get("data", data)
     return {
-        "speed_pct": data["pwm_percent"],
-        "speed_rpm": data["rpm"],
+        "speed_pct": fan_data["pwm_percent"],
+        "speed_rpm": fan_data["rpm"],
     }
 
 
@@ -34,3 +35,11 @@ def test_connection(host):
         return True
     except (requests.RequestException, ValueError):
         return False
+
+
+def get_status(host: str) -> dict:
+    """Get OpenFAN status"""
+    resp = requests.get(f"http://{host}/api/v0/openfan/status", timeout=5)
+    resp.raise_for_status()
+    data = resp.json()
+    return data.get("data", {})
