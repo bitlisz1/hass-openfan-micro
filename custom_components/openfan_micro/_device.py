@@ -6,7 +6,6 @@ class Device:
     def __init__(self, host: str, name: str | None = None):
         self._host = host
         self._name = name or "OpenFAN Micro"
-        self._fixed_data = self._fetch_status()
 
     @property
     def unique_id(self) -> str:
@@ -28,11 +27,11 @@ class Device:
     def hostname(self) -> str:
         return self._fixed_data.get("hostname")
 
-    def _fetch_status(self):
+    def fetch_status(self):
         resp = requests.get(f"http://{self._host}/api/v0/openfan/status", timeout=5)
         resp.raise_for_status()
         data = resp.json()
-        return data.get("data", {})
+        self._fixed_data = data.get("data", {})
 
     def get_fan_status(self) -> dict[str, Any]:
         url = f"http://{self._host}/api/v0/fan/status"
