@@ -26,7 +26,12 @@ class Device:
 
     @property
     def hostname(self) -> str | None:
-        return self._fixed_data.get("hostname", self._name)
+        hostname: str | None = self._fixed_data.get("hostname")
+        if not hostname:
+            return self._name
+        if not hostname.startswith("uOpenFan-"):
+            hostname = f"uOpenFan-{hostname}"
+        return hostname[:128]
 
     def device_info(self) -> DeviceInfo:
         return DeviceInfo(
