@@ -8,7 +8,7 @@ from .const import DOMAIN, PLATFORMS
 
 async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry):
     hass.data.setdefault(DOMAIN, {})
-    hass.data[DOMAIN][entry.entry_id] = Device(**entry)
+    hass.data[DOMAIN][entry.entry_id] = Device(**entry.data)
 
     await hass.config_entries.async_forward_entry_setups(entry, PLATFORMS)
 

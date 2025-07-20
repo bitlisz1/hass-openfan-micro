@@ -3,7 +3,7 @@ import requests
 
 
 class Device:
-    def __init__(self, host: str, name: str | None = None, **kwargs):
+    def __init__(self, host: str, name: str | None = None):
         self._host = host
         self._name = name or "OpenFAN Micro"
         self._fixed_data = self._fetch_status()
