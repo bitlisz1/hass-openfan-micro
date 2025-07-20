@@ -2,7 +2,7 @@ import voluptuous as vol
 from homeassistant import config_entries
 from homeassistant.const import CONF_HOST, CONF_NAME
 
-from ._api import test_connection
+from ._device import Device
 from .const import DOMAIN
 
 
@@ -15,7 +15,7 @@ class OpenFANMicroConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
         if user_input is not None:
             host = user_input[CONF_HOST]
 
-            is_valid = await self.hass.async_add_executor_job(test_connection, host)
+            is_valid = await self.hass.async_add_executor_job(Device.test_connection, host)
 
             if is_valid:
                 return self.async_create_entry(
