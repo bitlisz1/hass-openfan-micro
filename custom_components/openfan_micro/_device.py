@@ -1,25 +1,27 @@
 from typing import Any
 from httpx import AsyncClient, HTTPError
+from homeassistant.helpers.device_registry import format_mac
+from homeassistant.components.sensor import SensorEntity
+from homeassistant.config_entries import ConfigEntry
+from homeassistant.core import HomeAssistant
+from homeassistant.helpers.device_registry import CONNECTION_NETWORK_MAC, DeviceInfo
+from homeassistant.helpers.entity_platform import AddEntitiesCallback
+
+from .const import DOMAIN
 
 
 class Device:
-
-    def __init__(self, client: AsyncClient, host: str, name: str | None = None):
+    def __init__(self, client: AsyncClient, host: str):
         self.client = client
         self._host = host
-        self._name = name or "OpenFAN Micro"
 
     @property
     def unique_id(self) -> str:
         return f"openfan_micro_{self._host}"
 
     @property
-    def name(self) -> str:
-        return self._name
-
-    @property
     def mac(self) -> str:
-        return self._fixed_data.get("mac")
+        return format_mac(self._fixed_data.get("mac"))
 
     @property
     def version(self) -> str:
@@ -28,6 +30,16 @@ class Device:
     @property
     def hostname(self) -> str:
         return self._fixed_data.get("hostname")
+
+    def device_info(self) -> DeviceInfo:
+        return DeviceInfo(
+            name=self.hostname,
+            model="OpenFAN Micro",
+            manufacturer="Karanovic Research",
+            sw_version=self.version,
+            identifiers={(DOMAIN, self.unique_id)},
+            connections={(CONNECTION_NETWORK_MAC, self.mac)},
+        )
 
     async def fetch_status(self):
         resp = await self.client.get(f"http://{self._host}/api/v0/openfan/status")

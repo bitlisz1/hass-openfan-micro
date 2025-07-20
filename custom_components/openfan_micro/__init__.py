@@ -1,5 +1,5 @@
 from homeassistant.config_entries import ConfigEntry
-from homeassistant.const import CONF_HOST, CONF_NAME
+from homeassistant.const import CONF_HOST
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers.httpx_client import get_async_client
 
@@ -11,7 +11,6 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry):
     device = Device(
         client=get_async_client(hass),
         host=entry.data.get(CONF_HOST),
-        name=entry.data.get(CONF_NAME),
     )
     await device.fetch_status()
 

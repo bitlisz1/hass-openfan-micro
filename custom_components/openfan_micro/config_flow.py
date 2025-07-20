@@ -1,6 +1,7 @@
+from httpx import HTTPError
 import voluptuous as vol
 from homeassistant import config_entries
-from homeassistant.const import CONF_HOST, CONF_NAME
+from homeassistant.const import CONF_HOST
 from homeassistant.helpers.httpx_client import get_async_client
 
 from ._device import Device
@@ -16,20 +17,19 @@ class OpenFANMicroConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
         if user_input is not None:
             host = user_input[CONF_HOST]
 
-            is_valid = await Device.test_connection(get_async_client(self.hass), host)
-
-            if is_valid:
+            device = Device(get_async_client(self.hass), host)
+            try:
+                await device.fetch_status()
                 return self.async_create_entry(
-                    title=user_input.get(CONF_NAME) or f"OpenFAN Micro ({host})",
+                    title=device.hostname,
                     data=user_input,
                 )
-            else:
+            except (HTTPError, ValueError):
                 errors["base"] = "cannot_connect"
 
         data_schema = vol.Schema(
             {
                 vol.Required(CONF_HOST): str,
-                vol.Optional(CONF_NAME, default=""): str,
             }
         )
 

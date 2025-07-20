@@ -23,17 +23,10 @@ class OpenFANMicroEntity(FanEntity):
         self._ofm_device = device
         # Last speed when turning off, default to 50%
         self.last_speed = 50
-        self._attr_name = device.name
+        self._attr_name = device.hostname
         self._speed_pct = 0
         self._unique_id = device.unique_id
-        self._attr_device_info = DeviceInfo(
-            identifiers={(DOMAIN, self._unique_id)},
-            connections={(CONNECTION_NETWORK_MAC, device.mac)},
-            name=device.name,
-            manufacturer="Karanovic Research",
-            model="OpenFAN Micro",
-            sw_version=device.version,
-        )
+        self._attr_device_info = device.device_info()
 
     @property
     def supported_features(self) -> FanEntityFeature:

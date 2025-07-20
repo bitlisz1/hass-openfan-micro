@@ -20,18 +20,11 @@ class OpenFANMicroRPMSensor(SensorEntity):
     def __init__(self, device: Device):
         self._ofm_device = device
 
-        self._attr_name = f"{device.name} RPM"
+        self._attr_name = f"{device.hostname} RPM"
         self._rpm = None
         self._unique_id = f"{device.unique_id}_rpm"
 
-        self._attr_device_info = DeviceInfo(
-            identifiers={(DOMAIN, device.unique_id)},
-            connections={(CONNECTION_NETWORK_MAC, device.mac)},
-            name=device.name,
-            manufacturer="Karanovic Research",
-            model="OpenFAN Micro",
-            sw_version=device.version,
-        )
+        self._attr_device_info = device.device_info()
 
     @property
     def device_info(self) -> DeviceInfo:

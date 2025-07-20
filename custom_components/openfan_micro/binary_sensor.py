@@ -20,7 +20,7 @@ async def async_setup_entry(
 
 class OpenFANMicroStallSensor(BinarySensorEntity):
     def __init__(self, device: Device):
-        self._name = f"{device.name} Stall Detected"
+        self._name = f"{device.hostname} Stall Detected"
 
         self._speed_pct = 0
         self._speed_rpm = 0
@@ -28,14 +28,7 @@ class OpenFANMicroStallSensor(BinarySensorEntity):
         self._attr_device_class = BinarySensorDeviceClass.PROBLEM
         self._attr_is_on = False
         self._unique_id = f"{device.unique_id}_stall"
-        self._attr_device_info = DeviceInfo(
-            identifiers={(DOMAIN, device.unique_id)},
-            connections={(CONNECTION_NETWORK_MAC, device.mac)},
-            name=device.name,
-            manufacturer="Karanovic Research",
-            model="OpenFAN Micro",
-            sw_version=device.version,
-        )
+        self._attr_device_info = device.device_info()
 
     @property
     def device_info(self) -> DeviceInfo:
