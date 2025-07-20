@@ -22,7 +22,7 @@ class OpenFANMicroEntity(FanEntity):
         self._ofm_device = device
         # Last speed when turning off, default to 50%
         self.last_speed = 50
-        self._attr_name = device.hostname
+        self._attr_name = device.name
         self._speed_pct = 0
         self._unique_id = device.unique_id
         self._attr_device_info = device.device_info()

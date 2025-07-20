@@ -19,7 +19,7 @@ class OpenFANMicroRPMSensor(SensorEntity):
     def __init__(self, device: Device):
         self._ofm_device = device
 
-        self._attr_name = f"{device.hostname} RPM"
+        self._attr_name = f"{device.name} RPM"
         self._rpm = None
         self._unique_id = f"{device.unique_id}_rpm"
 
@@ -43,5 +43,5 @@ class OpenFANMicroRPMSensor(SensorEntity):
         return "RPM"
 
     async def async_update(self):
-        data = await self.hass.async_add_executor_job(self._ofm_device.get_fan_status)
+        data = await self._ofm_device.get_fan_status()
         self._rpm = data["speed_rpm"]

@@ -13,6 +13,10 @@ class Device:
         self._name = name
 
     @property
+    def name(self) -> str:
+        return self._name or self.hostname
+
+    @property
     def unique_id(self) -> str:
         return f"openfan_micro_{self._host}"
 
@@ -25,10 +29,10 @@ class Device:
         return self._fixed_data.get("version")
 
     @property
-    def hostname(self) -> str | None:
+    def hostname(self) -> str:
         hostname: str | None = self._fixed_data.get("hostname")
         if not hostname:
-            return self._name
+            return "uOpenFan"
         if not hostname.startswith("uOpenFan-"):
             hostname = f"uOpenFan-{hostname}"
         return hostname[:128]
