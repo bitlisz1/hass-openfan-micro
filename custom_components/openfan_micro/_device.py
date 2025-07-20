@@ -1,7 +1,7 @@
 from typing import Any
 
 from homeassistant.helpers.device_registry import CONNECTION_NETWORK_MAC, DeviceInfo, format_mac
-from httpx import AsyncClient, HTTPError
+from httpx import AsyncClient
 
 from .const import DOMAIN
 
@@ -59,20 +59,7 @@ class Device:
         }
 
     async def set_fan_speed(self, speed_pct: int):
-        resp = self.client.get(
+        resp = await self.client.get(
             f"http://{self._host}/api/v0/fan/0/set", params={"value": int(speed_pct)}
         )
         resp.raise_for_status()
-
-    @staticmethod
-    async def test_connection(client: AsyncClient, host: str) -> bool:
-        """Check if the OpenFAN Micro device is reachable and responding."""
-        try:
-            resp = client.get(f"http://{host}/api/v0/fan/status")
-            resp.raise_for_status()
-            data = resp.json()
-            if data.get("status") != "ok":
-                return False
-            return True
-        except (HTTPError, ValueError):
-            return False
