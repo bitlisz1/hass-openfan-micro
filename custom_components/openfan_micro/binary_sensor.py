@@ -56,7 +56,7 @@ class OpenFANMicroStallSensor(BinarySensorEntity):
 
     async def async_update(self):
         # True if PWM > 0 but RPM == 0
-        data = await self.hass.async_add_executor_job(self._ofm_device.get_fan_status)
+        data = await self._ofm_device.get_fan_status()
         self._speed_pct = data["speed_pct"]
         self._speed_rpm = data["speed_rpm"]
         self.async_write_ha_state()

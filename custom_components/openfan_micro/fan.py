@@ -58,11 +58,11 @@ class OpenFANMicroEntity(FanEntity):
         return self._speed_pct
 
     async def async_update(self):
-        data = await self.hass.async_add_executor_job(self._ofm_device.get_fan_status)
+        data = await self._ofm_device.get_fan_status()
         self._speed_pct = data["speed_pct"]
 
     async def async_set_percentage(self, percentage: int) -> None:
-        await self.hass.async_add_executor_job(self._ofm_device.set_fan_speed, percentage)
+        await self._ofm_device.set_fan_speed(percentage)
         self._speed_pct = percentage
 
     async def async_turn_on(
@@ -73,11 +73,9 @@ class OpenFANMicroEntity(FanEntity):
         **kwargs: Any,
     ) -> None:
         """Turn on the fan."""
-        await self.hass.async_add_executor_job(
-            self._ofm_device.set_fan_speed, percentage or self.last_speed
-        )
+        await self._ofm_device.set_fan_speed(percentage or self.last_speed)
 
     async def async_turn_off(self, **kwargs: Any) -> None:
         """Turn the fan off."""
         self.last_speed = self.percentage
-        await self.hass.async_add_executor_job(self._ofm_device.set_fan_speed, 0)
+        await self._ofm_device.set_fan_speed(0)

@@ -76,7 +76,6 @@ Both entities are grouped under the same device in Home Assistant.
 ## Development
 
 This integration uses:
-- `requests` library for HTTP calls
 - Config Flow UI
 - Fan platform
 - Sensor platform

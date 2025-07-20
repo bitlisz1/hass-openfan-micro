@@ -1,6 +1,5 @@
 from typing import Any
-from httpx import AsyncClient
-import requests
+from httpx import AsyncClient, HTTPError
 
 
 class Device:
@@ -36,8 +35,8 @@ class Device:
         data = resp.json()
         self._fixed_data = data.get("data", {})
 
-    def get_fan_status(self) -> dict[str, Any]:
-        resp = requests.get(f"http://{self._host}/api/v0/fan/status", timeout=5)
+    async def get_fan_status(self) -> dict[str, Any]:
+        resp = await self.client.get(f"http://{self._host}/api/v0/fan/status")
         resp.raise_for_status()
         data = resp.json()
 
@@ -50,21 +49,21 @@ class Device:
             "speed_rpm": fan_data["rpm"],
         }
 
-    def set_fan_speed(self, speed_pct):
-        url = f"http://{self._host}/api/v0/fan/0/set"
-        params = {"value": int(speed_pct)}
-        resp = requests.get(url, params=params, timeout=5)
+    async def set_fan_speed(self, speed_pct: int):
+        resp = self.client.get(
+            f"http://{self._host}/api/v0/fan/0/set", params={"value": int(speed_pct)}
+        )
         resp.raise_for_status()
 
     @staticmethod
-    def test_connection(host):
+    async def test_connection(client: AsyncClient, host: str) -> bool:
         """Check if the OpenFAN Micro device is reachable and responding."""
         try:
-            resp = requests.get(f"http://{host}/api/v0/fan/status", timeout=5)
+            resp = client.get(f"http://{host}/api/v0/fan/status")
             resp.raise_for_status()
             data = resp.json()
             if data.get("status") != "ok":
                 return False
             return True
-        except (requests.RequestException, ValueError):
+        except (HTTPError, ValueError):
             return False
