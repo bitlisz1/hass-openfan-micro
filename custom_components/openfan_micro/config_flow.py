@@ -1,8 +1,8 @@
-from httpx import HTTPError
 import voluptuous as vol
 from homeassistant import config_entries
-from homeassistant.const import CONF_HOST
+from homeassistant.const import CONF_HOST, CONF_NAME
 from homeassistant.helpers.httpx_client import get_async_client
+from httpx import HTTPError
 
 from ._device import Device
 from .const import DOMAIN
@@ -21,7 +21,7 @@ class OpenFANMicroConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
             try:
                 await device.fetch_status()
                 return self.async_create_entry(
-                    title=device.hostname,
+                    title=device.hostname or f"OpenFAN Micro ({host})",
                     data=user_input,
                 )
             except (HTTPError, ValueError):
@@ -30,6 +30,7 @@ class OpenFANMicroConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
         data_schema = vol.Schema(
             {
                 vol.Required(CONF_HOST): str,
+                vol.Optional(CONF_NAME, default=""): str,
             }
         )
 

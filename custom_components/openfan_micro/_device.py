@@ -1,19 +1,16 @@
 from typing import Any
+
+from homeassistant.helpers.device_registry import CONNECTION_NETWORK_MAC, DeviceInfo, format_mac
 from httpx import AsyncClient, HTTPError
-from homeassistant.helpers.device_registry import format_mac
-from homeassistant.components.sensor import SensorEntity
-from homeassistant.config_entries import ConfigEntry
-from homeassistant.core import HomeAssistant
-from homeassistant.helpers.device_registry import CONNECTION_NETWORK_MAC, DeviceInfo
-from homeassistant.helpers.entity_platform import AddEntitiesCallback
 
 from .const import DOMAIN
 
 
 class Device:
-    def __init__(self, client: AsyncClient, host: str):
+    def __init__(self, client: AsyncClient, host: str, name: str | None = None):
         self.client = client
         self._host = host
+        self._name = name
 
     @property
     def unique_id(self) -> str:
@@ -28,8 +25,8 @@ class Device:
         return self._fixed_data.get("version")
 
     @property
-    def hostname(self) -> str:
-        return self._fixed_data.get("hostname")
+    def hostname(self) -> str | None:
+        return self._fixed_data.get("hostname", self._name)
 
     def device_info(self) -> DeviceInfo:
         return DeviceInfo(
