@@ -26,11 +26,9 @@ class OpenFANMicroEntity(FanEntity):
         self._speed_pct = 0
         self._unique_id = device.unique_id
         self._attr_device_info = device.device_info()
-
-    @property
-    def supported_features(self) -> FanEntityFeature:
-        """Flag supported features."""
-        return FanEntityFeature.SET_SPEED | FanEntityFeature.TURN_OFF | FanEntityFeature.TURN_ON
+        self._attr_supported_features = (
+            FanEntityFeature.SET_SPEED | FanEntityFeature.TURN_OFF | FanEntityFeature.TURN_ON
+        )
 
     @property
     def device_info(self) -> DeviceInfo:
