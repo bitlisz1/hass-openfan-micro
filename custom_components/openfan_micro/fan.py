@@ -59,11 +59,7 @@ class OpenFANMicroEntity(FanEntity):
         self._speed_pct = percentage
 
     async def async_turn_on(
-        self,
-        speed: Optional[str] = None,
-        percentage: Optional[int] = None,
-        preset_mode: Optional[str] = None,
-        **kwargs: Any,
+        self, percentage: Optional[int] = None, preset_mode: Optional[str] = None, **kwargs: Any
     ) -> None:
         """Turn on the fan."""
         pct = percentage or self.last_speed
