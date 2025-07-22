@@ -1,3 +1,4 @@
+from logging import getLogger
 from typing import Any, Optional
 
 from homeassistant.components.fan import FanEntity, FanEntityFeature
@@ -7,6 +8,8 @@ from homeassistant.helpers.device_registry import DeviceInfo
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 
 from ._device import Device
+
+_LOGGER = getLogger(__name__)
 
 
 async def async_setup_entry(
@@ -63,9 +66,13 @@ class OpenFANMicroEntity(FanEntity):
         **kwargs: Any,
     ) -> None:
         """Turn on the fan."""
-        await self._ofm_device.set_fan_speed(percentage or self.last_speed)
+        pct = percentage or self.last_speed
+        _LOGGER.debug("Turning on fan: %d", pct)
+        await self._ofm_device.set_fan_speed(pct)
+        self._speed_pct = pct
 
     async def async_turn_off(self, **kwargs: Any) -> None:
         """Turn the fan off."""
         self.last_speed = self.percentage
+        _LOGGER.debug("Turning off fan, remembering speed: %d", self.last_speed)
         await self._ofm_device.set_fan_speed(0)
