@@ -1,47 +1,47 @@
+"""RPM sensor for OpenFAN Micro."""
+from __future__ import annotations
+from typing import Any
+import logging
+
 from homeassistant.components.sensor import SensorEntity
+from homeassistant.helpers.update_coordinator import CoordinatorEntity
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import HomeAssistant
-from homeassistant.helpers.device_registry import DeviceInfo
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 
-from ._device import Device
+_LOGGER = logging.getLogger(__name__)
 
 
 async def async_setup_entry(
-    hass: HomeAssistant, entry: ConfigEntry[Device], async_add_entities: AddEntitiesCallback
-):
-    rpm = OpenFANMicroRPMSensor(entry.runtime_data)
+    hass: HomeAssistant, entry: ConfigEntry, async_add_entities: AddEntitiesCallback
+) -> None:
+    device = getattr(entry, "runtime_data", None)
+    if device is None:
+        _LOGGER.error("OpenFAN Micro: runtime_data is None (sensor)")
+        return
+    async_add_entities([OpenFanRpmSensor(device)])
 
-    async_add_entities([rpm])
 
+class OpenFanRpmSensor(CoordinatorEntity, SensorEntity):
+    _attr_native_unit_of_measurement = "rpm"
+    _attr_icon = "mdi:fan"
 
-class OpenFANMicroRPMSensor(SensorEntity):
-    def __init__(self, device: Device):
-        self._ofm_device = device
-
-        self._attr_name = f"{device.name} RPM"
-        self._rpm = None
-        self._unique_id = f"{device.unique_id}_rpm"
-
-        self._attr_device_info = device.device_info()
-
-    @property
-    def device_info(self) -> DeviceInfo:
-        """Return the device info."""
-        return self._attr_device_info
-
-    @property
-    def unique_id(self):
-        return self._unique_id
+    def __init__(self, device) -> None:
+        super().__init__(device.coordinator)
+        self._device = device
+        self._host = getattr(device, "host", "unknown")
+        name = getattr(device, "name", None) or f"OpenFAN Micro {self._host}"
+        self._attr_name = f"{name} RPM"
+        self._attr_unique_id = f"openfan_micro_rpm_{self._host}"
 
     @property
-    def state(self):
-        return self._rpm
+    def device_info(self) -> dict[str, Any] | None:
+        try:
+            return self._device.device_info()
+        except Exception:
+            return None
 
     @property
-    def unit_of_measurement(self):
-        return "RPM"
-
-    async def async_update(self):
-        data = await self._ofm_device.get_fan_status()
-        self._rpm = data["speed_rpm"]
+    def native_value(self) -> int | None:
+        data = self.coordinator.data or {}
+        return int(data.get("rpm") or 0)

@@ -1,11 +1,13 @@
 {
   "domain": "openfan_micro",
   "name": "OpenFAN Micro",
-  "version": "1.0",
+  "version": "0.2.0",
   "config_flow": true,
-  "documentation": "https://github.com/beryju/hass-openfan-micro",
-  "requirements": [],
-  "codeowners": ["@BeryJu"],
-  "integration_type": "device",
-  "icon": "icon.png"
+  "documentation": "https://github.com/bitlisz1/hass-openfan-micro",
+  "requirements": [OpenFAN Micro, Home Assitant],
+  "codeowners": [
+    "@BeryJu",
+    "@bitlisz1"
+  ],
+  "iot_class": "local_polling"
 }

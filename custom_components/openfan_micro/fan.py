@@ -1,74 +1,75 @@
-from logging import getLogger
+"""Fan entity for OpenFAN Micro.
+
+Exposes on/off and percentage (0..100).
+"""
+from __future__ import annotations
 from typing import Any, Optional
+import logging
 
 from homeassistant.components.fan import FanEntity, FanEntityFeature
+from homeassistant.helpers.update_coordinator import CoordinatorEntity
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import HomeAssistant
-from homeassistant.helpers.device_registry import DeviceInfo
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 
-from ._device import Device
-
-_LOGGER = getLogger(__name__)
+_LOGGER = logging.getLogger(__name__)
 
 
 async def async_setup_entry(
-    hass: HomeAssistant, entry: ConfigEntry[Device], async_add_entities: AddEntitiesCallback
-):
-    fan = OpenFANMicroEntity(entry.runtime_data)
+    hass: HomeAssistant, entry: ConfigEntry, async_add_entities: AddEntitiesCallback
+) -> None:
+    device = getattr(entry, "runtime_data", None)
+    if device is None:
+        _LOGGER.error("OpenFAN Micro: runtime_data is None")
+        return
+    async_add_entities([OpenFanMicroFan(device)])
 
-    async_add_entities([fan])
 
+class OpenFanMicroFan(CoordinatorEntity, FanEntity):
+    _attr_supported_features = (
+        FanEntityFeature.SET_SPEED | FanEntityFeature.TURN_ON | FanEntityFeature.TURN_OFF
+    )
 
-class OpenFANMicroEntity(FanEntity):
-    def __init__(self, device: Device):
-        self._ofm_device = device
-        # Last speed when turning off, default to 50%
-        self.last_speed = 50
-        self._attr_name = device.name
-        self._speed_pct = 0
-        self._unique_id = device.unique_id
-        self._attr_device_info = device.device_info()
-        self._attr_supported_features = (
-            FanEntityFeature.SET_SPEED | FanEntityFeature.TURN_OFF | FanEntityFeature.TURN_ON
-        )
-
-    @property
-    def device_info(self) -> DeviceInfo:
-        """Return the device info."""
-        return self._attr_device_info
+    def __init__(self, device) -> None:
+        super().__init__(device.coordinator)
+        self._device = device
+        self._host = getattr(device, "host", "unknown")
+        name = getattr(device, "name", None) or f"OpenFAN Micro {self._host}"
+        self._attr_name = name
+        self._attr_unique_id = f"openfan_micro_fan_{self._host}"
+        self._last_pct = 50
 
     @property
-    def unique_id(self):
-        return self._unique_id
+    def device_info(self) -> dict[str, Any] | None:
+        try:
+            return self._device.device_info()
+        except Exception:
+            return None
 
     @property
-    def is_on(self):
-        return self._speed_pct > 0
+    def percentage(self) -> int | None:
+        data = self.coordinator.data or {}
+        return data.get("pwm")
 
     @property
-    def percentage(self):
-        return self._speed_pct
-
-    async def async_update(self):
-        data = await self._ofm_device.get_fan_status()
-        self._speed_pct = data["speed_pct"]
+    def is_on(self) -> bool | None:
+        pct = self.percentage or 0
+        return pct > 0
 
     async def async_set_percentage(self, percentage: int) -> None:
-        await self._ofm_device.set_fan_speed(percentage)
-        self._speed_pct = percentage
+        pct = max(0, min(100, int(percentage)))
+        self._last_pct = pct
+        await self._device.api.set_pwm(pct)
+        await self.coordinator.async_request_refresh()
 
     async def async_turn_on(
-        self, percentage: Optional[int] = None, preset_mode: Optional[str] = None, **kwargs: Any
+        self,
+        percentage: Optional[int] = None,
+        preset_mode: Optional[str] = None,
+        **kwargs: Any,
     ) -> None:
-        """Turn on the fan."""
-        pct = percentage or self.last_speed
-        _LOGGER.debug("Turning on fan: %d", pct)
-        await self._ofm_device.set_fan_speed(pct)
-        self._speed_pct = pct
+        pct = int(percentage) if percentage is not None else (self._last_pct or 50)
+        await self.async_set_percentage(pct)
 
     async def async_turn_off(self, **kwargs: Any) -> None:
-        """Turn the fan off."""
-        self.last_speed = self.percentage
-        _LOGGER.debug("Turning off fan, remembering speed: %d", self.last_speed)
-        await self._ofm_device.set_fan_speed(0)
+        await self.async_set_percentage(0)

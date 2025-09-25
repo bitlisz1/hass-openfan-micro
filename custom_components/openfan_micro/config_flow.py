@@ -1,37 +1,60 @@
+"""Config Flow for OpenFAN Micro.
+
+Minimal UI flow: just ask for Host and optional Name.
+We probe the device once to validate connectivity.
+"""
+from __future__ import annotations
+
 import voluptuous as vol
-from homeassistant import config_entries
-from homeassistant.const import CONF_HOST, CONF_NAME
-from homeassistant.helpers.httpx_client import get_async_client
-from httpx import HTTPError
+from typing import Any
 
-from ._device import Device
+from homeassistant import config_entries, exceptions
+from homeassistant.core import HomeAssistant
+
 from .const import DOMAIN
+from ._device import OpenFanDevice
 
 
-class OpenFANMicroConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
+class CannotConnect(exceptions.HomeAssistantError):
+    """Error to indicate we cannot connect."""
+
+
+DATA_SCHEMA = vol.Schema({vol.Required("host"): str, vol.Optional("name"): str})
+
+
+async def _validate_input(hass: HomeAssistant, data: dict[str, Any]) -> dict[str, Any]:
+    host = data["host"].strip()
+    name = (data.get("name") or f"OpenFAN Micro {host}").strip()
+
+    dev = OpenFanDevice(hass, host, name)
+    # First refresh will fetch status once (raises on network error).
+    await dev.async_first_refresh()
+    rpm = dev.coordinator_data.get("rpm", 0)
+
+    return {"title": name, "host": host, "name": name, "rpm": rpm}
+
+
+class ConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
+    """Handle a config flow for OpenFAN Micro."""
     VERSION = 1
 
-    async def async_step_user(self, user_input=None):
-        errors = {}
+    async def async_step_user(self, user_input: dict[str, Any] | None = None):
+        if user_input is None:
+            return self.async_show_form(step_id="user", data_schema=DATA_SCHEMA)
 
-        if user_input is not None:
-            host = user_input[CONF_HOST]
+        try:
+            info = await _validate_input(self.hass, user_input)
+        except Exception:
+            # Unknown error; show generic error code.
+            return self.async_show_form(
+                step_id="user", data_schema=DATA_SCHEMA, errors={"base": "unknown"}
+            )
 
-            device = Device(get_async_client(self.hass), host)
-            try:
-                await device.fetch_status()
-                return self.async_create_entry(
-                    title=device.hostname or f"OpenFAN Micro ({host})",
-                    data=user_input,
-                )
-            except (HTTPError, ValueError):
-                errors["base"] = "cannot_connect"
+        # Use host as unique_id (1 host = 1 device)
+        await self.async_set_unique_id(info["host"])
+        self._abort_if_unique_id_configured()
 
-        data_schema = vol.Schema(
-            {
-                vol.Required(CONF_HOST): str,
-                vol.Optional(CONF_NAME, default=""): str,
-            }
+        return self.async_create_entry(
+            title=info["title"],
+            data={"host": info["host"], "name": info["name"]},
         )
-
-        return self.async_show_form(step_id="user", data_schema=data_schema, errors=errors)

@@ -1,17 +1,18 @@
 {
+  "title": "OpenFAN Micro",
   "config": {
     "step": {
       "user": {
-        "title": "Connect to OpenFAN Micro",
-        "description": "Enter the IP address of your OpenFAN Micro device.",
+        "title": "Add OpenFAN Micro",
+        "description": "Enter the IP address of your device.",
         "data": {
-          "host": "Device IP Address",
-          "name": "Device's Name"
+          "host": "Host (IP address)",
+          "name": "Name (optional)"
         }
       }
     },
     "error": {
-      "cannot_connect": "Unable to connect to the OpenFAN Micro device. Check the IP address and network connectivity."
+      "unknown": "Unknown error"
     }
   }
 }
