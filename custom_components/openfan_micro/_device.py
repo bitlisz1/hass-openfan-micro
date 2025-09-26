@@ -4,6 +4,7 @@ Exposes:
 - `api`: low-level HTTP client
 - `coordinator`: DataUpdateCoordinator for polling status
 - `device_info()`: HA device registry metadata
+- optional MAC handling (if device/API does not provide one)
 """
 from __future__ import annotations
 
@@ -59,7 +60,12 @@ class OpenFanDevice:
     @property
     def mac(self) -> Optional[str]:
         """Formatted MAC address or None if not available/invalid."""
-        raw = self._fixed_data.get("mac")
+        raw = None
+        try:
+            raw = self._fixed_data.get("mac")
+        except Exception:
+            raw = None
+
         if not raw:
             return None
         try:
@@ -91,6 +97,5 @@ class OpenFanDevice:
     def __repr__(self) -> str:  # pragma: no cover
         return f"<OpenFanDevice host={self.host} name={self.name!r} mac={self.mac!r}>"
 
-
-# Backwards-compatible alias
+# Backwards-compatible alias (original code imported `Device`)
 Device = OpenFanDevice

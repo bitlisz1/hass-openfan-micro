@@ -18,7 +18,11 @@ set_voltage:
       selector: { entity: { domain: fan } }
     volts:
       required: true
-      selector: { select: { options: [5, 12] } }
+      selector:
+        select:
+          options:
+            - "5"
+            - "12"
 
 calibrate_min:
   name: Calibrate minimum PWM
@@ -42,8 +46,43 @@ calibrate_min:
     rpm_threshold:
       required: false
       default: 100
-      selector: { number: { min: 0, max: 1000, step: 10, mode: box } }
+      selector: { number: { min: 0, max: 2000, step: 10, mode: box } }
     margin:
       required: false
       default: 5
       selector: { number: { min: 0, max: 20, step: 1, mode: box } }
+
+set_temp_control:
+  name: Set temperature control
+  description: Configure temperature-based control (curve + smoothing) for this fan.
+  fields:
+    entity_id:
+      required: true
+      selector: { entity: { domain: fan } }
+    temp_entity:
+      required: true
+      selector: { entity: { domain: sensor } }
+    temp_curve:
+      required: true
+      example: "45=35, 60=60, 70=100"
+      selector: { text: {} }
+    temp_integrate_seconds:
+      required: false
+      default: 30
+      selector: { number: { min: 5, max: 900, step: 5, mode: box } }
+    temp_update_min_interval:
+      required: false
+      default: 10
+      selector: { number: { min: 2, max: 300, step: 1, mode: box } }
+    temp_deadband_pct:
+      required: false
+      default: 3
+      selector: { number: { min: 0, max: 20, step: 1, mode: box } }
+
+clear_temp_control:
+  name: Disable temperature control
+  description: Clear temp_entity to disable temperature-based control.
+  fields:
+    entity_id:
+      required: true
+      selector: { entity: { domain: fan } }

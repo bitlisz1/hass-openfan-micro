@@ -43,12 +43,6 @@ class OpenFanRpmSensor(CoordinatorEntity, SensorEntity):
             return None
 
     @property
-    def available(self) -> bool:
-        base = super().available
-        forced = getattr(self.coordinator, "_forced_unavailable", False)
-        return base and not forced
-
-    @property
     def native_value(self) -> int | None:
         data = self.coordinator.data or {}
         return int(data.get("rpm") or 0)

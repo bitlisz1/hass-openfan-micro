@@ -16,7 +16,7 @@ DEFAULTS = {
     "temp_deadband_pct": 3,
     "failure_threshold": 3,
     "stall_consecutive": 3,
-    # "min_pwm_calibrated": false
+    # "min_pwm_calibrated": false  # set by calibrate_min service
 }
 
 def _schema(options: dict):
