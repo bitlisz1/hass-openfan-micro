@@ -8,6 +8,7 @@ from homeassistant.config_entries import ConfigEntry
 from homeassistant.const import Platform
 from homeassistant.core import HomeAssistant, callback
 from homeassistant.helpers.event import async_track_state_change_event
+from homeassistant.helpers import entity_registry as er  # <-- FIX: modern entity registry API
 
 from .const import DOMAIN
 from ._device import Device
@@ -151,27 +152,48 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
         entry.async_on_unload(unsub)
 
     # --- services: led_set, set_voltage, calibrate_min ---
+
     async def _resolve_dev(entity_id: str) -> Device | None:
-        er = await hass.helpers.entity_registry.async_get_registry()
-        ent = er.async_get(entity_id)
-        if not ent or ent.config_entry_id != entry.entry_id:
+        """Return the Device for the given entity_id, even if it belongs to another OpenFAN entry."""
+        registry = er.async_get(hass)  # <-- FIX: helyes elérés
+        ent = registry.async_get(entity_id)
+        if not ent:
+            _LOGGER.error("openfan_micro: entity_id %s not found in registry", entity_id)
             return None
-        return entry.runtime_data
+
+        # If the entity belongs to this config entry, use it.
+        if ent.config_entry_id == entry.entry_id:
+            return entry.runtime_data
+
+        # Otherwise, find the matching OpenFAN config entry and return its runtime_data.
+        for ce in hass.config_entries.async_entries(DOMAIN):
+            if ce.entry_id == ent.config_entry_id:
+                dev_rt = getattr(ce, "runtime_data", None)
+                if dev_rt is None:
+                    _LOGGER.error("openfan_micro: runtime_data not ready for entry %s (%s)", ce.entry_id, ce.title)
+                return dev_rt
+
+        _LOGGER.error("openfan_micro: entity %s is not tied to any %s config entry", entity_id, DOMAIN)
+        return None
 
     async def svc_led_set(call):
-        dev = await _resolve_dev(call.data["entity_id"])
-        if not dev: return
+        dev = await _resolve_dev(call.data.get("entity_id", ""))
+        if not dev:
+            return
         await dev.api.led_set(bool(call.data["enabled"]))
 
     async def svc_set_voltage(call):
-        dev = await _resolve_dev(call.data["entity_id"])
-        if not dev: return
+        dev = await _resolve_dev(call.data.get("entity_id", ""))
+        if not dev:
+            return
         volts = int(call.data["volts"])
         await dev.api.set_voltage_12v(True if volts == 12 else False)
 
     async def svc_calibrate_min(call):
-        dev = await _resolve_dev(call.data["entity_id"])
-        if not dev: return
+        dev = await _resolve_dev(call.data.get("entity_id", ""))
+        if not dev:
+            _LOGGER.error("openfan_micro.calibrate_min: could not resolve device from entity_id")
+            return
         from_pct = int(call.data.get("from_pct", 10))
         to_pct   = int(call.data.get("to_pct", 40))
         step     = int(call.data.get("step", 5))
@@ -200,6 +222,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
         else:
             _LOGGER.warning("Calibration did not reach RPM threshold; leaving min_pwm unchanged.")
 
+    # NOTE: domain-level service registration is idempotent here; HA will keep the last handler.
     hass.services.async_register(DOMAIN, "led_set", svc_led_set)
     hass.services.async_register(DOMAIN, "set_voltage", svc_set_voltage)
     hass.services.async_register(DOMAIN, "calibrate_min", svc_calibrate_min)
