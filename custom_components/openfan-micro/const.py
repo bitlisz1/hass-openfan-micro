@@ -1,1 +1,0 @@
-DOMAIN = "openfan_micro"
