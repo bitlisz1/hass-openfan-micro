@@ -1,5 +1,7 @@
 # OpenFAN Micro — Home Assistant Integration
 
+Note: AI used for generate code, at least I tested few days with 2 controller+fans.
+
 > **Status:**  `v1.0.0`
 > “Graduated from v0.3.1-beta.3; stability & docs polish.”
 > Custom integration for [OpenFAN Micro](https://github.com/SasaKaranovic/OpenFan-Micro) devices.  
